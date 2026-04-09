@@ -10,38 +10,25 @@ declare global {
     Razorpay: new (options: RazorpayOptions) => RazorpayInstance
   }
 }
-
 interface RazorpayOptions {
-  key: string
-  amount: number
-  currency: string
-  order_id: string
-  name: string
-  description: string
-  prefill: { name: string; email: string }
+  key: string; amount: number; currency: string; order_id: string
+  name: string; description: string; prefill: { name: string; email: string }
   theme: { color: string }
-  handler: (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => void
+  handler: (r: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => void
 }
-
-interface RazorpayInstance {
-  open: () => void
-}
-
-interface CheckoutState {
-  tier: Ticket
-  qty: number
-}
+interface RazorpayInstance { open: () => void }
+interface CheckoutState { tier: Ticket; qty: number }
 
 const PROMO_CODES: Record<string, number> = { SAVE10: 10, FIRST20: 20 }
 
 function loadRazorpay(): Promise<boolean> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     if (window.Razorpay) { resolve(true); return }
-    const script = document.createElement('script')
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-    script.onload = () => resolve(true)
-    script.onerror = () => resolve(false)
-    document.body.appendChild(script)
+    const s = document.createElement('script')
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    s.onload = () => resolve(true)
+    s.onerror = () => resolve(false)
+    document.body.appendChild(s)
   })
 }
 
@@ -51,7 +38,7 @@ export default function Checkout() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
 
-  const [payment, setPayment] = useState<'upi' | 'paypal'>('upi')
+  const [payment, setPayment] = useState<'upi' | 'paypal'>('paypal')
   const [promo, setPromo] = useState('')
   const [discount, setDiscount] = useState(0)
   const [promoError, setPromoError] = useState('')
@@ -72,13 +59,10 @@ export default function Checkout() {
   }
 
   async function handlePay() {
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
     try {
       const { data: order } = await api.post<Order>('/orders', {
-        eventId: id,
-        ticketId: tier.id,
-        quantity: qty,
+        eventId: id, ticketId: tier.id, quantity: qty,
         promoCode: promo.trim().toUpperCase() || undefined,
       })
 
@@ -86,90 +70,102 @@ export default function Checkout() {
         const { data: rzp } = await api.post<{ rzpOrderId: string; amount: number; currency: string }>(
           '/payments/razorpay/create', { orderId: order.id }
         )
-
         const loaded = await loadRazorpay()
         if (!loaded) { setError('Failed to load payment gateway'); return }
-
-        const rzpInstance = new window.Razorpay({
+        new window.Razorpay({
           key: import.meta.env.VITE_RAZORPAY_KEY_ID as string,
-          amount: rzp.amount,
-          currency: rzp.currency,
-          order_id: rzp.rzpOrderId,
-          name: 'EventBook',
-          description: `${tier.tier} × ${qty}`,
+          amount: rzp.amount, currency: rzp.currency, order_id: rzp.rzpOrderId,
+          name: 'Event Booking Platform', description: `${tier.tier} × ${qty}`,
           prefill: { name: user!.name, email: user!.email },
-          theme: { color: '#4f46e5' },
-          handler: async (response) => {
+          theme: { color: '#1d4ed8' },
+          handler: async r => {
             await api.post('/payments/razorpay/verify', {
-              orderId: order.id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
+              orderId: order.id, razorpay_order_id: r.razorpay_order_id,
+              razorpay_payment_id: r.razorpay_payment_id, razorpay_signature: r.razorpay_signature,
             })
-            navigate(`/confirmation/${order.id}`, { state: { orderId: order.id, total, payment: 'UPI' } })
+            navigate(`/confirmation/${order.id}`, { state: { orderId: order.id, total, payment: 'UPI', tier, qty } })
           },
-        })
-        rzpInstance.open()
+        }).open()
       } else {
-        navigate(`/confirmation/${order.id}`, { state: { orderId: order.id, total, payment: 'PayPal' } })
+        navigate(`/confirmation/${order.id}`, { state: { orderId: order.id, total, payment: 'PayPal', tier, qty } })
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Payment failed. Please try again.'
-      setError(msg)
-    } finally {
-      setLoading(false)
-    }
+      setError(err instanceof Error ? err.message : 'Payment failed. Please try again.')
+    } finally { setLoading(false) }
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       <main className="max-w-lg mx-auto px-4 py-6">
-        <h1 className="text-xl font-bold text-gray-900 mb-5">Checkout</h1>
+        <h1 className="text-lg font-bold text-gray-900 mb-5">Secure Checkout</h1>
 
-        <div className="bg-gray-50 rounded-xl p-4 mb-5">
-          <p className="font-semibold text-gray-800">{tier.tier}</p>
-          <p className="text-sm text-gray-500 mt-0.5">{tier.tier} × {qty}</p>
-          <div className="border-t border-gray-200 mt-3 pt-3 space-y-1 text-sm">
-            <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>₹{subtotal.toLocaleString()}</span></div>
-            {discount > 0 && (
-              <div className="flex justify-between text-green-600"><span>Promo ({discount}% off)</span><span>−₹{discountAmt.toLocaleString()}</span></div>
-            )}
-            <div className="flex justify-between font-bold text-gray-900 pt-1 border-t border-gray-200">
-              <span>Total</span><span>₹{total.toLocaleString()}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-2 mb-1">
-          <input
-            type="text"
-            placeholder="Promo code"
-            value={promo}
-            onChange={e => setPromo(e.target.value)}
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          />
-          <button onClick={applyPromo} className="px-4 py-2 bg-gray-800 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors">Apply</button>
-        </div>
-        {promoError && <p className="text-red-500 text-xs mb-4">{promoError}</p>}
-
-        <h2 className="font-semibold text-gray-800 mb-3 mt-5">Payment Method</h2>
-        <div className="space-y-2 mb-6">
+        {/* Payment methods */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-5">
           {([
-            { id: 'upi', label: 'UPI / Razorpay', sub: 'Pay via any UPI app' },
-            { id: 'paypal', label: 'PayPal', sub: 'Pay with your PayPal account' },
-          ] as const).map(m => (
+            { id: 'paypal', label: 'Pay with PayPal', color: 'text-blue-600', icon: 'P' },
+            { id: 'upi', label: 'Pay with UPI', color: 'text-green-600', icon: 'U' },
+          ] as const).map((m, i) => (
             <button
               key={m.id}
               onClick={() => setPayment(m.id)}
-              className={`w-full text-left border rounded-xl px-4 py-3 transition-all ${
-                payment === m.id ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-400' : 'border-gray-200 hover:border-indigo-300'
-              }`}
+              className={`w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors ${
+                i === 0 ? '' : 'border-t border-gray-100'
+              } ${payment === m.id ? 'bg-blue-50' : ''}`}
             >
-              <p className="font-medium text-gray-800 text-sm">{m.label}</p>
-              <p className="text-xs text-gray-400">{m.sub}</p>
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-full border-2 ${payment === m.id ? 'border-blue-600' : 'border-gray-300'} flex items-center justify-center font-bold text-xs ${m.color}`}>
+                  {m.icon}
+                </div>
+                <span className={`font-semibold text-sm ${m.color}`}>{m.label}</span>
+              </div>
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           ))}
+        </div>
+
+        {/* Promo code */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-5">
+          <p className="text-sm font-medium text-gray-700 mb-2">Promo Code</p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Enter promo code"
+              value={promo}
+              onChange={e => setPromo(e.target.value)}
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button onClick={applyPromo} className="px-4 py-2 bg-gray-800 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors">
+              Apply
+            </button>
+          </div>
+          {promoError && <p className="text-red-500 text-xs mt-1">{promoError}</p>}
+          {discount > 0 && <p className="text-green-600 text-xs mt-1">✓ {discount}% discount applied</p>}
+        </div>
+
+        {/* Order summary */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="font-semibold text-gray-800">Order Summary</h2>
+          </div>
+          <div className="space-y-2 text-sm text-gray-600 mb-3">
+            <div className="flex justify-between">
+              <span>{tier.tier} × {qty}</span>
+              <span>₹{subtotal.toLocaleString()}</span>
+            </div>
+            {discount > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Discount ({discount}%)</span>
+                <span>−₹{discountAmt.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-between font-bold text-gray-900 text-lg border-t border-gray-100 pt-3">
+            <span>Order Summary</span>
+            <span>₹{total.toLocaleString()}</span>
+          </div>
         </div>
 
         {error && <p className="text-red-500 text-sm mb-4 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
@@ -177,11 +173,11 @@ export default function Checkout() {
         <button
           onClick={handlePay}
           disabled={loading}
-          className="w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-60"
+          className="w-full bg-blue-700 text-white py-3.5 rounded-lg font-semibold hover:bg-blue-800 transition-colors disabled:opacity-60 text-base"
         >
-          {loading ? 'Processing...' : `Pay ₹${total.toLocaleString()}`}
+          {loading ? 'Processing...' : 'Complete Payment'}
         </button>
       </main>
-    </>
+    </div>
   )
 }
