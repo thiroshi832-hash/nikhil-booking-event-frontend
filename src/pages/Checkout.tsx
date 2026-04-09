@@ -153,18 +153,18 @@ export default function Checkout() {
           <div className="space-y-2 text-sm text-gray-600 mb-3">
             <div className="flex justify-between">
               <span>{tier.tier} × {qty}</span>
-              <span>₹{subtotal.toLocaleString()}</span>
+              <span>${subtotal.toLocaleString()}</span>
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-green-600">
                 <span>Discount ({discount}%)</span>
-                <span>−₹{discountAmt.toLocaleString()}</span>
+                <span>−${discountAmt.toLocaleString()}</span>
               </div>
             )}
           </div>
           <div className="flex justify-between font-bold text-gray-900 text-lg border-t border-gray-100 pt-3">
-            <span>Order Summary</span>
-            <span>₹{total.toLocaleString()}</span>
+            <span>Total</span>
+            <span>${total.toLocaleString()}</span>
           </div>
         </div>
 

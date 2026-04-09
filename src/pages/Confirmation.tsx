@@ -57,7 +57,7 @@ export default function Confirmation() {
               <span>Payment</span><span className="font-medium text-gray-800">{payment}</span>
             </div>
             <div className="flex justify-between font-bold text-gray-900 pt-1 border-t border-gray-100">
-              <span>Total Paid</span><span className="text-blue-700">₹{total.toLocaleString()}</span>
+              <span>Total Paid</span><span className="text-blue-700">${total.toLocaleString()}</span>
             </div>
           </div>
 
@@ -73,7 +73,7 @@ export default function Confirmation() {
               </svg>
             </button>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/orders')}
               className="w-full border border-gray-200 text-gray-600 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm"
             >
               View My Orders

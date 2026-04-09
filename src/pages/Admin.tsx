@@ -138,6 +138,7 @@ export default function Admin() {
         {/* Overview Tab */}
         {tab === 'Overview' && (
           <div className="space-y-5">
+            <h2 className="font-bold text-gray-900 text-lg">Dashboard Overview</h2>
             {/* Stats cards */}
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
@@ -204,13 +205,17 @@ export default function Admin() {
                   <span>Ticket</span><span className="text-center">Payments</span><span className="text-right">State / Total</span>
                 </div>
                 {[
-                  { name: 'General Admission', sold: 120, cap: 200, color: 'bg-green-500' },
-                  { name: 'VIP Pass', sold: 80, cap: 100, color: 'bg-yellow-500' },
-                  { name: 'Early Bird', sold: 50, cap: 50, color: 'bg-red-500' },
+                  { name: 'General Admission', sold: 120, cap: 200, bg: 'bg-green-100', icon: 'text-green-600' },
+                  { name: 'VIP Pass', sold: 80, cap: 100, bg: 'bg-yellow-100', icon: 'text-yellow-600' },
+                  { name: 'Early Bird', sold: 50, cap: 50, bg: 'bg-red-100', icon: 'text-red-600' },
                 ].map(item => (
                   <div key={item.name} className="flex items-center justify-between py-2.5 border-t border-gray-50">
                     <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-sm ${item.color}`} />
+                      <div className={`w-7 h-7 rounded-md ${item.bg} flex items-center justify-center`}>
+                        <svg className={`w-4 h-4 ${item.icon}`} fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z" />
+                        </svg>
+                      </div>
                       <span className="text-sm text-gray-700">{item.name}</span>
                     </div>
                     <span className="text-xs text-gray-500">{item.sold} Sold / {item.cap}</span>
@@ -225,14 +230,14 @@ export default function Admin() {
               <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
                 <h2 className="font-semibold text-gray-800 mb-4">Manage Tickets</h2>
                 {[
-                  { name: 'General Admission', price: 50, sold: 0, cap: 200 },
-                  { name: 'VIP Pass', price: 120, sold: 0, cap: 100 },
-                  { name: 'Early Bird', price: 50, sold: 0, cap: 50 },
+                  { name: 'General Admission', price: 50, cap: 200 },
+                  { name: 'VIP Pass', price: 120, cap: 100 },
+                  { name: 'Early Bird', price: 50, cap: 50 },
                 ].map(item => (
                   <div key={item.name} className="flex items-center justify-between py-3 border-t border-gray-50 first:border-0">
                     <div>
                       <p className="font-medium text-gray-800 text-sm">{item.name}</p>
-                      <p className="text-xs text-gray-400">${item.price} Sold / {item.cap} Capacity</p>
+                      <p className="text-xs text-gray-400">${item.price} · Sold / {item.cap} Capacity</p>
                     </div>
                     <div className="flex gap-2">
                       <button className="text-xs bg-blue-700 text-white px-3 py-1.5 rounded hover:bg-blue-800">Edit</button>
@@ -271,7 +276,7 @@ export default function Admin() {
         {/* Create Event Tab */}
         {tab === 'Create Event' && (
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-            <h2 className="font-semibold text-gray-800 mb-5">Create New Event</h2>
+            <h2 className="font-semibold text-gray-800 mb-5">Create Event</h2>
             <form onSubmit={createEvent} className="space-y-4">
               {([
                 { label: 'Event Title', field: 'title', type: 'text' },
@@ -341,17 +346,8 @@ export default function Admin() {
         {/* Attendee List Tab */}
         {tab === 'Attendee List' && (
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="p-5 border-b border-gray-100 flex justify-between items-center">
+            <div className="p-5 border-b border-gray-100">
               <h2 className="font-semibold text-gray-800">Attendee List Export</h2>
-              {selectedEvent && (
-                <a href={`${apiBase}/admin/events/${selectedEvent}/attendees.csv`} download
-                  className="flex items-center gap-2 bg-blue-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-800">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Export CSV
-                </a>
-              )}
             </div>
 
             {/* Event selector */}
@@ -374,8 +370,8 @@ export default function Admin() {
                 {sales.orders.map((o, i) => (
                   <div key={o.id} className={`flex items-center justify-between px-5 py-4 ${i > 0 ? 'border-t border-gray-100' : ''}`}>
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                        <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                         </svg>
                       </div>
@@ -392,6 +388,15 @@ export default function Admin() {
                     </div>
                   </div>
                 ))}
+                <div className="px-5 py-4 border-t border-gray-100">
+                  <a href={`${apiBase}/admin/events/${selectedEvent}/attendees.csv`} download
+                    className="flex items-center justify-center gap-2 bg-blue-700 text-white text-sm px-4 py-2.5 rounded-lg hover:bg-blue-800 w-full font-semibold">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export CSV
+                  </a>
+                </div>
               </div>
             )}
           </div>
